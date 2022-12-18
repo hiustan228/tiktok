@@ -1,0 +1,221 @@
+using namespace std;
+#include <vector>
+#include <iostream>
+#include <string>
+#include <map>
+#include <algorithm>
+
+void fanoShannon(vector<vector<int>>& binaryArrays, vector<pair<char, double>>& probabilities, int l, int h)
+{
+    double pack1 = 0, pack2 = 0, diff1 = 0, diff2 = 0;
+    int i, d, k, j;
+    if ((l + 1) == h || l == h || l > h) {
+        if (l == h || l > h)
+            return;
+        binaryArrays[h].push_back(0);
+        binaryArrays[l].push_back(1);
+        return;
+    }
+    else {
+        for (i = l; i <= h - 1; i++)
+            pack1 = pack1 + probabilities[i].second;
+        pack2 = pack2 + probabilities[h].second;
+        diff1 = pack1 - pack2;
+        if (diff1 < 0)
+            diff1 = diff1 * -1;
+        j = 2;
+        while (j != h - l + 1) {
+            k = h - j;
+            pack1 = pack2 = 0;
+            for (i = l; i <= k; i++)
+                pack1 = pack1 + probabilities[i].second;
+            for (i = h; i > k; i--)
+                pack2 = pack2 + probabilities[i].second;
+            diff2 = pack1 - pack2;
+            if (diff2 < 0)
+                diff2 = diff2 * -1;
+            if (diff2 >= diff1)
+                break;
+            diff1 = diff2;
+            j++;
+        }
+        k++;
+        for (i = l; i <= k; i++)
+            binaryArrays[i].push_back(1);
+        for (i = k + 1; i <= h; i++)
+            binaryArrays[i].push_back(0);
+
+        // Invoke shannon function
+        fanoShannon(binaryArrays, probabilities, l, k);
+        fanoShannon(binaryArrays, probabilities, k + 1, h);
+    }
+}
+
+int main()
+{
+    setlocale(LC_ALL, "Rus");
+
+    cout << "Task 1:" << endl;
+    cout << "Amount of symbols in alphabet: 35" << endl;
+    int M = 35;
+
+    double Hmax = log2(M);
+    double Hp = 0;
+    double Ph = 1;
+    for (int i = 0; i < M; i++)
+    {
+        Ph /= 2;
+        Hp -= Ph * log2(Ph);
+    }
+
+    cout << "а) H(max) = " << Hmax << endl;
+    cout << "б) H(p) = " << Hp << endl;
+
+    cout << "Task2:" << endl;
+
+    cout << "Underload R = " << (Hmax - Hp) / Hmax << endl;
+
+    cout << "Task 3" << endl;
+    cout << "Amount of symbols in alphabet: 13" << endl;
+    int M2 = 13;
+    int r = 0;
+    int allr = 0;
+    double sum = 0;
+    for (int i = 0; i < M2; i++)
+    {
+        allr++;
+        sum += ++r;
+    }
+
+    cout << "Speed R = " << Hp / (sum / allr) << endl;
+
+
+
+
+
+
+
+
+    vector<pair<char, int>> arrSortGtoL;
+
+    vector<vector<int>> binaryArrays;
+    string text;
+    cout << "Input the text(english):" << endl;
+    getline(cin, text);
+    map<char, int> AllPair;
+
+    for (int i = 0; i < text.length(); i++) {
+        if (AllPair.find(text[i]) != AllPair.end())
+        {
+            AllPair.find(text[i])->second++;
+        }
+        else
+        {
+            AllPair.emplace(text[i], 1);
+        }
+    }
+
+    for (auto it = AllPair.begin(); it != AllPair.end(); it++)
+    {
+        arrSortGtoL.push_back(pair<char, int>(it->first, it->second));
+    }
+
+
+    sort(arrSortGtoL.begin(), arrSortGtoL.end(), [](const pair<char, int>& l, const pair<char, int>& b) {return l.second < b.second; });
+
+    vector<pair<char, double>> probabilities;
+
+    cout << "Amount of symbols" << endl;
+    for (int i = 0; i < arrSortGtoL.size(); i++)
+    {
+        cout << arrSortGtoL[i].first << " " << arrSortGtoL[i].second << endl;
+        probabilities.push_back(pair<char, double>(arrSortGtoL[i].first, (double)arrSortGtoL[i].second / text.length()));
+    }
+
+
+    for (int i = 0; i < probabilities.size(); i++)
+    {
+        binaryArrays.push_back(vector<int>());
+    }
+
+
+
+
+
+
+    fanoShannon(binaryArrays, probabilities, 0, probabilities.size() - 1);
+    pair<char, string>* bites = new pair<char, string>[binaryArrays.size()];
+
+    for (int i = 0; i < binaryArrays.size(); i++)
+    {
+        cout << endl << probabilities[i].first << ": " << probabilities[i].second << " Code: ";
+        bites[i].first = probabilities[i].first;
+        for (int b = 0; b < binaryArrays[i].size(); b++)
+        {
+
+            bites[i].second += to_string(binaryArrays[i][b]);
+            cout << binaryArrays[i][b] << " ";
+        }
+        cout << "size of bits: " << binaryArrays[i].size();
+    }
+
+    cout << endl;
+
+    string Code;
+
+    cout << "Encoder called";
+
+    for (int i = 0; i < text.size(); i++)
+    {
+        for (int b = 0; b < binaryArrays.size(); b++)
+        {
+            if (text[i] == bites[b].first)
+            {
+                Code += bites[b].second;
+            }
+        }
+    }
+
+    cout << endl << "" << Code << endl;
+
+    string testString;
+    string output;
+
+    cout << "Encoder called";
+
+    for (int i = 0; i < Code.size(); i++)
+    {
+        testString += Code[i];
+        for (int b = 0; b < binaryArrays.size(); b++)
+        {
+            if (testString == bites[b].second)
+            {
+                output += bites[b].first;
+                testString = "";
+            }
+        }
+    }
+
+    cout << endl << output << endl;
+
+    double HX = 0;
+    double Lsr = 0;
+    for (int i = 0; i < probabilities.size(); i++)
+    {
+        if (probabilities[i].second != 0)
+            HX -= probabilities[i].second * log2(probabilities[i].second);
+    }
+
+    for (int i = 0; i < probabilities.size(); i++)
+    {
+        Lsr += probabilities[i].second * binaryArrays[i].size();
+    }
+
+    double q = (Lsr - HX) / HX;
+
+    cout << "H(X) = " << HX << endl;
+    cout << "Lc = " << Lsr << endl;
+    cout << "(Lc - H(X))/H(X) = " << q << endl;
+
+
+}
